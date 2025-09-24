@@ -29,14 +29,14 @@ namespace Pr1_10._09
     class Program
     {
         private static List<Book> books = new List<Book>()
-        {
-                new Book(10, "Гиря Пети" , "Жак Поль", "Фантастика", 2020, 100),
-                new Book(12, "Гиря Пети" , "Петя", "Детектив", 2024, 1000),
-                new Book(11, "Перо в небе" , "Жак Поль", "Фантастика", 2021, 300)
-
-        };
+    {
+        new Book(10, "Гиря Пети" , "Жак Поль", "Фантастика", 2020, 100),
+        new Book(12, "Гиря Пети" , "Петя", "Детектив", 2024, 1000),
+        new Book(11, "Перо в небе" , "Жак Поль", "Фантастика", 2021, 300)
+    };
         private static int nextId = 100;
-        private static readonly List<string> availableGenres = new List<string> { "Фантастика", "Детектив", "Роман", "Научная литература", "Исторический" };
+
+        private static ShoppingCart cart = new ShoppingCart();
         static void Main(string[] args)
         {
             Console.WriteLine("=== Система учета книг ===");
@@ -77,11 +77,39 @@ namespace Pr1_10._09
                     case "8":
                         AddManyBook();
                         break;
+                    case "9":
+                        AddToCart();
+                        break;
+                    case "10":
+                        ShowCart();
+                        break;
 
 
 
                 }
             }
+        }
+        static void AddToCart()
+        {
+            Console.Write("Введите ID книги для добавления в корзину: ");
+            int bookId = Convert.ToInt32(Console.ReadLine());
+
+            var book = books.FirstOrDefault(b => b.Id == bookId);
+            if (book != null)
+            {
+                cart.AddToCart(book);
+            }
+            else
+            {
+                Console.WriteLine("Книга с таким ID не найдена!");
+            }
+            WaitEnter();
+        }
+
+        static void ShowCart()
+        {
+            cart.ShowCart();
+            WaitEnter();
         }
         static void ShowMenu() {
             Console.WriteLine("\n=== МЕНЮ ===");
@@ -93,6 +121,8 @@ namespace Pr1_10._09
             Console.WriteLine("6. Сгруппировать книги по авторам");
             Console.WriteLine("7. Показать все книги");
             Console.WriteLine("8. Добавить блок книг");
+            Console.WriteLine("9. Добавить книгу в корзину");
+            Console.WriteLine("10. Показать корзину");
             Console.WriteLine("0. Выход");
             Console.Write("Выберите действие: ");
         }
@@ -262,7 +292,7 @@ namespace Pr1_10._09
                 foreach (var book in authorGroup.OrderBy(b => b.Year))
                 {
                     Console.WriteLine($"{counter}. {book.Name}");
-                    Console.WriteLine($"   Жанр: {book.Genre} | Год: {book.Year} | Цена: {book.Price} руб.");
+                    Console.WriteLine($"   Жанр: {book.Genre} | Год: {book.Year} | Цена: {book.Price}$.");
                     counter++;
                 }
             }
@@ -303,5 +333,36 @@ namespace Pr1_10._09
 
 
 
+    }
+
+    public class ShoppingCart
+    {
+        private List<Book> items = new List<Book>();
+
+        public void AddToCart(Book book)
+        {
+            items.Add(book);
+            Console.WriteLine($"Книга '{book.Name}' добавлена в корзину");
+        }
+
+        public void ShowCart()
+        {
+            if (items.Count == 0)
+            {
+                Console.WriteLine("Корзина пуста!");
+                return;
+            }
+
+            Console.WriteLine("\n=== ВАША КОРЗИНА ===");
+            int totalPrice = 0;
+
+            foreach (var book in items)
+            {
+                book.Print();
+                totalPrice += book.Price;
+            }
+
+            Console.WriteLine($"ИТОГО: {items.Count} книг на сумму {totalPrice}$.");
+        }
     }
 }
