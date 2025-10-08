@@ -341,14 +341,442 @@ namespace Kucherenko223
             }
         }
 
+        //Класс для управления консольным меню
+        public class ConsoleMenu
+        {
+            private UniversitySystem _university;
+
+            public ConsoleMenu(UniversitySystem university)
+            {
+                _university = university;
+            }
+
+            public void ShowMainMenu()
+            {
+                while (true)
+                {
+                    Console.WriteLine("\n=== СИСТЕМА УПРАВЛЕНИЯ УНИВЕРСИТЕТОМ ===");
+                    Console.WriteLine("1. Управление студентами");
+                    Console.WriteLine("2. Управление преподавателями");
+                    Console.WriteLine("3. Управление курсами");
+                    Console.WriteLine("4. Просмотр информации");
+                    Console.WriteLine("5. Операции");
+                    Console.WriteLine("0. Выход");
+                    Console.Write("Выберите пункт меню: ");
+
+                    var choice = Console.ReadLine();
+                    switch (choice)
+                    {
+                        case "1": ShowStudentMenu(); break;
+                        case "2": ShowTeacherMenu(); break;
+                        case "3": ShowCourseMenu(); break;
+                        case "4": ShowInfoMenu(); break;
+                        case "5": ShowOperationsMenu(); break;
+                        case "0": return;
+                        default: Console.WriteLine("Неверный выбор!"); break;
+                    }
+                }
+            }
+
+            //Меню управления студентами
+            private void ShowStudentMenu()
+            {
+                while (true)
+                {
+                    Console.WriteLine("\n--- Управление студентами ---");
+                    Console.WriteLine("1. Добавить студента");
+                    Console.WriteLine("2. Просмотреть всех студентов");
+                    Console.WriteLine("3. Найти студента по ID");
+                    Console.WriteLine("4. Записать студента на курс");
+                    Console.WriteLine("5. Выставить оценку");
+                    Console.WriteLine("0. Назад");
+                    Console.Write("Выберите пункт: ");
+
+                    var choice = Console.ReadLine();
+                    switch (choice)
+                    {
+                        case "1":
+                            try
+                            {
+                                Console.Write("Имя: ");
+                                var name = Console.ReadLine();
+                                Console.Write("Возраст: ");
+                                var age = int.Parse(Console.ReadLine());
+                                Console.Write("Контакты: ");
+                                var contacts = Console.ReadLine();
+                                _university.AddStudent(name, age, contacts);
+                            }
+                            catch (Exception ex)
+                            {
+                                Console.WriteLine($"Ошибка: {ex.Message}");
+                            }
+                            break;
+
+                        case "2":
+                            var students = _university.GetAllStudents();
+                            Console.WriteLine("\n--- Все студенты ---");
+                            foreach (var studdent in students)
+                            {
+                                studdent.DisplayInfo();
+                                Console.WriteLine("---");
+                            }
+                            break;
+
+                        case "3":
+                            Console.Write("Введите ID студента: ");
+                            var studentId = Console.ReadLine();
+                            var student = _university.GetStudent(studentId);
+                            if (student != null)
+                                student.DisplayInfo();
+                            else
+                                Console.WriteLine("Студент не найден");
+                            break;
+
+                        case "4":
+                            try
+                            {
+                                Console.Write("ID студента: ");
+                                var sId = Console.ReadLine();
+                                Console.Write("ID курса: ");
+                                var cId = Console.ReadLine();
+                                _university.EnrollStudentInCourse(sId, cId);
+                            }
+                            catch (Exception ex)
+                            {
+                                Console.WriteLine($"Ошибка: {ex.Message}");
+                            }
+                            break;
+
+                        case "5":
+                            try
+                            {
+                                Console.Write("ID студента: ");
+                                var studId = Console.ReadLine();
+                                Console.Write("ID курса: ");
+                                var courseId = Console.ReadLine();
+                                Console.Write("Оценка (0-100): ");
+                                var grade = double.Parse(Console.ReadLine());
+                                _university.AddGradeToStudent(studId, courseId, grade);
+                            }
+                            catch (Exception ex)
+                            {
+                                Console.WriteLine($"Ошибка: {ex.Message}");
+                            }
+                            break;
+
+                        case "0": return;
+                        default: Console.WriteLine("Неверный выбор!"); break;
+                    }
+                }
+            }
+
+
+            private void ShowTeacherMenu()
+            {
+                while (true)
+                {
+                    Console.WriteLine("\n--- Управление преподавателями ---");
+                    Console.WriteLine("1. Добавить преподавателя");
+                    Console.WriteLine("2. Просмотреть всех преподавателей");
+                    Console.WriteLine("3. Назначить преподавателя на курс");
+                    Console.WriteLine("0. Назад");
+                    Console.Write("Выберите пункт: ");
+
+                    var choice = Console.ReadLine();
+                    switch (choice)
+                    {
+                        case "1":
+                            try
+                            {
+                                Console.Write("Имя: ");
+                                var name = Console.ReadLine();
+                                Console.Write("Возраст: ");
+                                var age = int.Parse(Console.ReadLine());
+                                Console.Write("Контакты: ");
+                                var contacts = Console.ReadLine();
+                                Console.Write("Специализация: ");
+                                var spec = Console.ReadLine();
+                                _university.AddTeacher(name, age, contacts, spec);
+                            }
+                            catch (Exception ex)
+                            {
+                                Console.WriteLine($"Ошибка: {ex.Message}");
+                            }
+                            break;
+
+                        case "2":
+                            var teachers = _university.GetAllTeachers();
+                            Console.WriteLine("\n--- Все преподаватели ---");
+                            foreach (var teacher in teachers)
+                            {
+                                teacher.DisplayInfo();
+                                Console.WriteLine("---");
+                            }
+                            break;
+
+                        case "3":
+                            try
+                            {
+                                Console.Write("ID преподавателя: ");
+                                var tId = Console.ReadLine();
+                                Console.Write("ID курса: ");
+                                var cId = Console.ReadLine();
+                                _university.AssignTeacherToCourse(tId, cId);
+                            }
+                            catch (Exception ex)
+                            {
+                                Console.WriteLine($"Ошибка: {ex.Message}");
+                            }
+                            break;
+
+                        case "0": return;
+                        default: Console.WriteLine("Неверный выбор!"); break;
+                    }
+                }
+            }
+
+            private void ShowCourseMenu()
+            {
+                while (true)
+                {
+                    Console.WriteLine("\n--- Управление курсами ---");
+                    Console.WriteLine("1. Создать курс");
+                    Console.WriteLine("2. Просмотреть все курсы");
+                    Console.WriteLine("3. Просмотреть детали курса");
+                    Console.WriteLine("0. Назад");
+                    Console.Write("Выберите пункт: ");
+
+                    var choice = Console.ReadLine();
+                    switch (choice)
+                    {
+                        case "1":
+                            try
+                            {
+                                Console.Write("Название курса: ");
+                                var name = Console.ReadLine();
+                                Console.Write("Описание: ");
+                                var desc = Console.ReadLine();
+                                Console.Write("Макс. студентов (по умолчанию 30): ");
+                                var max = Console.ReadLine();
+                                if (string.IsNullOrEmpty(max))
+                                    _university.AddCourse(name, desc);
+                                else
+                                    _university.AddCourse(name, desc, int.Parse(max));
+                            }
+                            catch (Exception ex)
+                            {
+                                Console.WriteLine($"Ошибка: {ex.Message}");
+                            }
+                            break;
+
+                        case "2":
+                            var courses = _university.GetAllCourses();
+                            Console.WriteLine("\n--- Все курсы ---");
+                            foreach (var coursse in courses)
+                            {
+                                coursse.DisplayInfo();
+                                Console.WriteLine("---");
+                            }
+                            break;
+
+                        case "3":
+                            Console.Write("Введите ID курса: ");
+                            var courseId = Console.ReadLine();
+                            var course = _university.GetCourse(courseId);
+                            if (course != null)
+                            {
+                                course.DisplayInfo();
+                                Console.WriteLine("\nСтуденты на курсе:");
+                                foreach (var student in course.GetStudents())
+                                {
+                                    Console.WriteLine($"- {student.Name} (ID: {student.Id})");
+                                }
+                            }
+                            else
+                            {
+                                Console.WriteLine("Курс не найден");
+                            }
+                            break;
+
+                        case "0": return;
+                        default: Console.WriteLine("Неверный выбор!"); break;
+                    }
+                }
+            }
+
+            // Меню просмотра информации
+            private void ShowInfoMenu()
+            {
+                Console.WriteLine("\n--- Просмотр информации ---");
+                Console.WriteLine("1. Все студенты");
+                Console.WriteLine("2. Все преподаватели");
+                Console.WriteLine("3. Все курсы");
+                Console.WriteLine("4. Статистика университета");
+                Console.Write("Выберите пункт: ");
+
+                var choice = Console.ReadLine();
+                switch (choice)
+                {
+                    case "1":
+                        var students = _university.GetAllStudents();
+                        Console.WriteLine($"\nВсего студентов: {students.Count}");
+                        foreach (var student in students)
+                        {
+                            student.DisplayInfo();
+                            Console.WriteLine("Курсы студента:");
+                            foreach (var course in student.Courses)
+                            {
+                                Console.WriteLine($"- {course.Name}");
+                            }
+                            Console.WriteLine("---");
+                        }
+                        break;
+
+                    case "2":
+                        var teachers = _university.GetAllTeachers();
+                        Console.WriteLine($"\nВсего преподавателей: {teachers.Count}");
+                        foreach (var teacher in teachers)
+                        {
+                            teacher.DisplayInfo();
+                            Console.WriteLine("Курсы преподавателя:");
+                            foreach (var course in teacher.Courses)
+                            {
+                                Console.WriteLine($"- {course.Name}");
+                            }
+                            Console.WriteLine("---");
+                        }
+                        break;
+
+                    case "3":
+                        var courses = _university.GetAllCourses();
+                        Console.WriteLine($"\nВсего курсов: {courses.Count}");
+                        foreach (var course in courses)
+                        {
+                            course.DisplayInfo();
+                            Console.WriteLine("---");
+                        }
+                        break;
+
+                    case "4":
+                        Console.WriteLine("\n=== СТАТИСТИКА УНИВЕРСИТЕТА ===");
+                        Console.WriteLine($"Студентов: {_university.GetAllStudents().Count}");
+                        Console.WriteLine($"Преподавателей: {_university.GetAllTeachers().Count}");
+                        Console.WriteLine($"Курсов: {_university.GetAllCourses().Count}");
+
+                        var allStudents = _university.GetAllStudents();
+                        if (allStudents.Count > 0)
+                        {
+                            var avgGrade = allStudents.Average(s => s.CalculateAverageGrade());
+                            Console.WriteLine($"Средний балл по университету: {avgGrade:F2}");
+                        }
+                        break;
+                }
+            }
+
+            //Меню операций
+            private void ShowOperationsMenu()
+            {
+                Console.WriteLine("\n--- Операции ---");
+                Console.WriteLine("1. Записать студента на курс");
+                Console.WriteLine("2. Назначить преподавателя на курс");
+                Console.WriteLine("3. Выставить оценку студенту");
+                Console.Write("Выберите пункт: ");
+
+                var choice = Console.ReadLine();
+                try
+                {
+                    switch (choice)
+                    {
+                        case "1":
+                            Console.Write("ID студента: ");
+                            var sId = Console.ReadLine();
+                            Console.Write("ID курса: ");
+                            var cId = Console.ReadLine();
+                            _university.EnrollStudentInCourse(sId, cId);
+                            break;
+
+                        case "2":
+                            Console.Write("ID преподавателя: ");
+                            var tId = Console.ReadLine();
+                            Console.Write("ID курса: ");
+                            var courseId = Console.ReadLine();
+                            _university.AssignTeacherToCourse(tId, courseId);
+                            break;
+
+                        case "3":
+                            Console.Write("ID студента: ");
+                            var studId = Console.ReadLine();
+                            Console.Write("ID курса: ");
+                            var crsId = Console.ReadLine();
+                            Console.Write("Оценка (0-100): ");
+                            var grade = double.Parse(Console.ReadLine());
+                            _university.AddGradeToStudent(studId, crsId, grade);
+                            break;
+                    }
+                }
+                catch (Exception ex)
+                {
+                    Console.WriteLine($"Ошибка: {ex.Message}");
+                }
+            }
+        }
+
+
 
         class Program
         {
             static void Main(string[] args)
             {
+                Console.OutputEncoding = System.Text.Encoding.UTF8;
 
 
+                var university = new UniversitySystem();
+                var menu = new ConsoleMenu(university);
 
+                InitializeTestData(university);
+
+                Console.WriteLine("Добро пожаловать в систему управления университетом!");
+                menu.ShowMainMenu();
+
+                Console.WriteLine("Программа завершена. До свидания!");
+            }
+
+            static void InitializeTestData(UniversitySystem university)
+            {
+
+                university.AddStudent("Иван Петров", 20, "ivan@mail.ru");
+                university.AddStudent("Мария Сидорова", 19, "maria@mail.ru");
+                university.AddStudent("Алексей Козлов", 21, "alex@mail.ru");
+
+                university.AddTeacher("Дмитрий Орлов", 45, "orlov@university.ru", "Математика");
+                university.AddTeacher("Елена Васнецова", 38, "vasnecova@university.ru", "Программирование");
+
+                university.AddCourse("Высшая математика", "Основы высшей математики", 25);
+                university.AddCourse("C# программирование", "Изучение языка C# и .NET", 20);
+                university.AddCourse("Базы данных", "Основы проектирования и работы с БД", 15);
+
+                try
+                {
+                    university.AssignTeacherToCourse("T001", "C001"); // Орлов -> Высшая математика
+                    university.AssignTeacherToCourse("T002", "C002"); // Васнецова -> C# программирование
+                    university.AssignTeacherToCourse("T002", "C003"); // Васнецова -> Базы данных
+
+                    university.EnrollStudentInCourse("S001", "C001");
+                    university.EnrollStudentInCourse("S001", "C002");
+                    university.EnrollStudentInCourse("S002", "C002");
+                    university.EnrollStudentInCourse("S003", "C001");
+                    university.EnrollStudentInCourse("S003", "C003");
+
+
+                    university.AddGradeToStudent("S001", "C001", 85);
+                    university.AddGradeToStudent("S001", "C002", 92);
+                    university.AddGradeToStudent("S002", "C002", 78);
+                    university.AddGradeToStudent("S003", "C001", 88);
+                }
+                catch (Exception ex)
+                {
+                    Console.WriteLine($"Ошибка при инициализации тестовых данных: {ex.Message}");
+                }
             }
         }
     }
