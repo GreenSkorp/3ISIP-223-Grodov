@@ -138,7 +138,7 @@ namespace Kucherenko223
 
         public IReadOnlyList<Course> Courses => _courses.AsReadOnly(); //Курсы, только для чтения
 
-        public void AssignToCourse(Course course) 
+        public void AssignToCourse(Course course)
         {
             if (!_courses.Contains(course))
             {
@@ -249,15 +249,107 @@ namespace Kucherenko223
             Console.WriteLine($"Студентов: {_students.Count}/{MaxStudents}");
             Console.WriteLine($"Свободных мест: {MaxStudents - _students.Count}");
         }
-    }
 
-    class Program
-    {
-        static void Main(string[] args)
+
+        public class UniversitySystem
         {
+            private List<Student> _students;
+            private List<Teacher> _teachers;
+            private List<Course> _courses;
+
+            public UniversitySystem()
+            {
+                _students = new List<Student>();
+                _teachers = new List<Teacher>();
+                _courses = new List<Course>();
+            }
+
+
+            public void AddStudent(string name, int age, string contactInfo)
+            {
+                var id = $"S{_students.Count + 1:000}";
+                var student = new Student(id, name, age, contactInfo);
+                _students.Add(student);
+                Console.WriteLine($"Студент {name} добавлен с ID: {id}");
+            }
+
+            public Student GetStudent(string id) =>
+                _students.FirstOrDefault(s => s.Id == id);
+
+            public List<Student> GetAllStudents() => new List<Student>(_students);
+
+
+            public void AddTeacher(string name, int age, string contactInfo, string specialization)
+            {
+                var id = $"T{_teachers.Count + 1:000}";
+                var teacher = new Teacher(id, name, age, contactInfo, specialization);
+                _teachers.Add(teacher);
+                Console.WriteLine($"Преподаватель {name} добавлен с ID: {id}");
+            }
+
+            public Teacher GetTeacher(string id) =>
+                _teachers.FirstOrDefault(t => t.Id == id);
+
+            public List<Teacher> GetAllTeachers() => new List<Teacher>(_teachers);
+
+            public void AddCourse(string name, string description, int maxStudents = 30)
+            {
+                var id = $"C{_courses.Count + 1:000}";
+                var course = new Course(id, name, description, maxStudents);
+                _courses.Add(course);
+                Console.WriteLine($"Курс {name} создан с ID: {id}");
+            }
+
+            public Course GetCourse(string id) =>
+                _courses.FirstOrDefault(c => c.CourseId == id);
+
+            public List<Course> GetAllCourses() => new List<Course>(_courses);
+
+
+            public void EnrollStudentInCourse(string studentId, string courseId)
+            {
+                var student = GetStudent(studentId);
+                var course = GetCourse(courseId);
+
+                if (student == null) throw new ArgumentException("Студент не найден");
+                if (course == null) throw new ArgumentException("Курс не найден");
+
+                student.EnrollInCourse(course);
+                Console.WriteLine($"Студент {student.Name} записан на курс {course.Name}");
+            }
+
+            public void AssignTeacherToCourse(string teacherId, string courseId)
+            {
+                var teacher = GetTeacher(teacherId);
+                var course = GetCourse(courseId);
+
+                if (teacher == null) throw new ArgumentException("Преподаватель не найден");
+                if (course == null) throw new ArgumentException("Курс не найден");
+
+                teacher.AssignToCourse(course);
+                Console.WriteLine($"Преподаватель {teacher.Name} назначен на курс {course.Name}");
+            }
+
+
+            public void AddGradeToStudent(string studentId, string courseId, double grade)
+            {
+                var student = GetStudent(studentId);
+                if (student == null) throw new ArgumentException("Студент не найден");
+
+                student.AddGrade(courseId, grade);
+                Console.WriteLine($"Оценка {grade} добавлена студенту {student.Name} за курс {courseId}");
+            }
+        }
+
+
+        class Program
+        {
+            static void Main(string[] args)
+            {
 
 
 
+            }
         }
     }
 }
