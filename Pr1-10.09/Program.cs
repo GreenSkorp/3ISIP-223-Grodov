@@ -9,16 +9,24 @@ namespace Pr1_10._09
 
     public class Players
     {
-        public int xp = 100;
-        public string name;
-        public Players(string Name)
+        protected int MaxHP = 100;
+        public int HP = 100;
+        public string Name;
+        public Weapon weapon;
+        public Armor armor;
+        public List<Potion> potions;
+        public Players(string name)
         {
-            name = Name;
+            Name = name;
         }
         public void NewPlayer(string nameme)
         {
-            this.name = nameme;
+            this.Name = nameme;
         }
+
+        public void NewArmor() { }
+        public void NewWeapon() { }
+        
 
     }
     public class Enemy
@@ -31,14 +39,44 @@ namespace Pr1_10._09
 
     public class Boss
     {
+        
+    }
+    public class Loot  {
+
+
 
     }
-    public class Loot
-    {}
+
+    public class Weapon : Loot  
+    {
+        public string Name;
+        public int ATK;           // 0-15 16-30 31-45 46-60
+        public double CritChance;
+
+        public Weapon(int atk,double critchanse) {
+            ATK = atk;
+            CritChance = critchanse;
+            if (atk >= 15) Name = "Острый Мечь";
+        }
+    }
+    public class Armor : Loot
+    {
+        public int AddHP;
+        public double Deff;  // Процент поглащаемого урона
+        public double DodgeChance;
+
+        public Armor(int addhp, double dadgechance) { }
+    }
+    public class Potion : Loot
+    {
+        public int AddHP;
+        public Potion() { }
+    }
 
 
     class Program
     {
+        public Random random = new Random();
         public Players Player;
         public int stage = 0;
         public int firstlvlchance = 6;  //При выпадении повышать след лвл на 1, из данного убирать 1
