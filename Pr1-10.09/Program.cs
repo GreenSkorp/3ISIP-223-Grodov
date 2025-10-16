@@ -14,7 +14,8 @@ namespace Pr1_10._09
 
         private void DisplayQuickStats()
         {
-            WriteLineColor($"HP: {Player.HP}/{Player.MaxHP + Player.armor.AddHP} | Урон: {Player.weapon.ATK}", ConsoleColor.White);
+            
+            WriteLineColor($"\nHP: {Player.HP}/{Player.MaxHP + Player.armor.AddHP} | Урон: {Player.weapon.ATK}", ConsoleColor.DarkGreen);
         }
         public void StartGame()
         {
@@ -24,6 +25,7 @@ namespace Pr1_10._09
             Player = new Players(name);
             Player.weapon = new Weapon(10, 10); // Стартовое оружие
             Player.armor = new Armor(20, 5, 5); // Стартовая броня
+            Player.HP = 120;
             Player.potions = new List<Potion> { new Potion(20, 10) }; // Стартовое зелье
 
             Console.WriteLine($"Добро пожаловать, {name}!");
@@ -36,7 +38,7 @@ namespace Pr1_10._09
                 if (Player.HP <= 0) break;
 
                 Stage++;
-                if (Stage > 10) break; // Завершаем игру после 10 уровней
+                if (Stage > 30) break; 
             }
 
             if (Player.HP > 0)
@@ -67,14 +69,16 @@ namespace Pr1_10._09
                 else // 66% шанс на монстра
                 {
                     FightEnemy();
+
+                    if (Player.HP > 0)
+                    {
+                        Console.WriteLine($"У вас осталось {Player.HP} HP");
+                        WaitEnter();
+                    }
                 }
             }
 
-            if (Player.HP > 0)
-            {
-                Console.WriteLine($"У вас осталось {Player.HP} HP");
-                WaitEnter();
-            }
+
         }
 
         private void FindChest()
@@ -94,7 +98,9 @@ namespace Pr1_10._09
                 {
                     Player.weapon = newWeapon;
                     WriteLineColor($"Вы экипировали: {newWeapon.Name}", ConsoleColor.Green);
+                    DisplayQuickStats();
                 }
+                else { WriteColor("Предмет был оставлен.", ConsoleColor.DarkYellow); }
             }
             else
             {
@@ -104,10 +110,21 @@ namespace Pr1_10._09
                 Console.WriteLine("Хотите взять его? (д/н)");
                 if (Console.ReadLine().ToLower() == "д")
                 {
+                    // СОХРАНЯЕМ СТАРОЕ МАКСИМАЛЬНОЕ HP ДЛЯ СООБЩЕНИЯ
+                    int oldMaxHP = Player.MaxHP + Player.armor.AddHP;
+
                     Player.armor = newArmor;
+
+                    // УСТАНАВЛИВАЕМ HP В 100 + БОНУС НОВОЙ БРОНИ
+                    Player.HP = Player.HP + newArmor.AddHP;
+
+                    int newMaxHP = Player.MaxHP + Player.armor.AddHP;
                     WriteLineColor($"Вы экипировали: {newArmor.Name}", ConsoleColor.Green);
+                    WriteLineColor($"Ваше здоровье теперь: {Player.HP}/{newMaxHP} HP", ConsoleColor.Green);
+
                     DisplayQuickStats();
                 }
+                else { WriteColor("Предмет был оставлен.", ConsoleColor.DarkYellow); }
             }
 
             // Получаем зелья (1-3 штуки)
@@ -253,6 +270,18 @@ namespace Pr1_10._09
 
             Player.HP -= damage;
             WriteLineColor($"Босс {boss.Name} наносит вам {damage} урона", ConsoleColor.DarkRed);
+
+            // Проверка спецспособностей боссов
+            if (boss.Name == "Повелитель Тьмы" && random.Next(100) < boss.FreezeChance)
+            {
+                WriteLineColor("Повелитель Тьмы накладывает на вас проклятие! Вы теряете 15 HP!", ConsoleColor.DarkMagenta);
+                Player.HP -= 15;
+            }
+            else if (boss.Name == "Король Демонов" && random.Next(100) < boss.FreezeChance)
+            {
+                WriteLineColor("Король Демонов оглушает вас! Вы пропускаете следующий ход!", ConsoleColor.DarkRed);
+                // Здесь можно добавить логику пропуска хода, если нужно
+            }
         }
 
         // Вспомогательные методы
@@ -291,6 +320,7 @@ namespace Pr1_10._09
         public int HP = 100;
         public string Name;
         public Weapon weapon;
+
         public Armor armor;
         public List<Potion> potions;
 
@@ -312,42 +342,78 @@ namespace Pr1_10._09
         public Enemy(int stage)
         {
             Random random = new Random();
-            string[] enemyTypes = { "Слизень", "Гоблин", "Скелет", "Маг", "Хоб-Гоблин", "Архи-Маг" };
-            Type = enemyTypes[random.Next(Math.Min(stage, enemyTypes.Length))];
+
+            // Определяем веса для уровней мобов: 1 уровень - 7, 2 уровень - 3, 3 уровень - 1
+            int[] levelWeights = { 7, 3, 1 }; // Сумма весов = 11
+
+            // Выбираем уровень моба на основе весов
+            int levelChoice = random.Next(1, 12); // 1-11
+
+            int mobLevel;
+            if (levelChoice <= 7) // 1-7 = 7/11 шанс
+            {
+                mobLevel = 1;
+            }
+            else if (levelChoice <= 10) // 8-10 = 3/11 шанс
+            {
+                mobLevel = 2;
+            }
+            else // 11 = 1/11 шанс
+            {
+                mobLevel = 3;
+            }
+
+            // Выбираем конкретного моба в зависимости от уровня
+            string[] level1Mobs = { "Слизень", "Гоблин" };
+            string[] level2Mobs = { "Скелет", "Маг" };
+            string[] level3Mobs = { "Хоб-Гоблин", "Архи-Маг" };
+
+            switch (mobLevel)
+            {
+                case 1:
+                    Type = level1Mobs[random.Next(level1Mobs.Length)];
+                    break;
+                case 2:
+                    Type = level2Mobs[random.Next(level2Mobs.Length)];
+                    break;
+                case 3:
+                    Type = level3Mobs[random.Next(level3Mobs.Length)];
+                    break;
+            }
 
             Name = Type;
 
-            // Базовая статистика в зависимости от типа
+            // Базовая статистика в зависимости от типа (остается без изменений)
             switch (Type)
             {
                 case "Слизень":
-                    HP = (int)(50 * 0.4 * stage);
-                    ATK = 5 * stage;
+                    HP = random.Next(5, 30);
+                    ATK = random.Next(5, 15);
                     FreezeChance = 0;
                     break;
                 case "Гоблин":
-                    HP = (int)(50 * 0.6 * stage);
-                    ATK = 8 * stage;
+                    HP = random.Next(25, 50);
+                    ATK = random.Next(5, 25);
                     FreezeChance = 0;
                     break;
                 case "Скелет":
-                    HP = 50 * stage;
-                    ATK = 10 * stage;
+                    HP = random.Next(50, 100);
+                    ATK = random.Next(10, 30);
                     FreezeChance = 0;
                     break;
                 case "Маг":
-                    HP = 50 * stage;
-                    ATK = 12 * stage;
+                    HP = random.Next(25, 60);
+                    ATK = random.Next(20, 50);
                     FreezeChance = random.Next(10, 26); // 10-25%
                     break;
                 case "Хоб-Гоблин":
-                    HP = 50 * 2 * stage;
-                    ATK = 15 * stage;
+                    HP = random.Next(100, 200);
+                    ATK = random.Next(15, 40);
                     FreezeChance = 0;
                     break;
                 case "Архи-Маг":
-                    HP = (int)(50 * 1.5 * stage);
-                    ATK = 18 * stage;
+                    HP = random.Next(40, 80);
+                    ATK = random.Next(30, 70);
                     FreezeChance = random.Next(15, 31); // 15-30%
                     break;
             }
@@ -358,11 +424,32 @@ namespace Pr1_10._09
     {
         public Boss(int stage) : base(stage)
         {
-            Name = "Древний Дракон";
-            HP = 200 * stage;
-            ATK = 25 * stage;
-            Type = "Босс";
-            FreezeChance = 0;
+            Random random = new Random();
+            string[] bossNames = { "Древний Дракон", "Повелитель Тьмы", "Король Демонов" };
+            Name = bossNames[random.Next(bossNames.Length)];
+
+            // Статистика в зависимости от типа босса
+            switch (Name)
+            {
+                case "Древний Дракон":
+                    HP = 270;
+                    ATK = 25;
+                    Type = "Босс";
+                    FreezeChance = 0;
+                    break;
+                case "Повелитель Тьмы":
+                    HP = 220;
+                    ATK = 30;
+                    Type = "Босс";
+                    FreezeChance = 15; // 15% шанс наложить проклятие
+                    break;
+                case "Король Демонов":
+                    HP = 250;
+                    ATK = 28;
+                    Type = "Босс";
+                    FreezeChance = 10; // 10% шанс оглушить
+                    break;
+            }
         }
     }
 
@@ -380,7 +467,7 @@ namespace Pr1_10._09
             int chance = LootChance();
             if (chance <= 10)
             {
-                return new Weapon(random.Next(0, 16), random.Next(10, 21));
+                return new Weapon(random.Next(5, 16), random.Next(10, 21));
             }
             if (chance <= 16 && chance > 10)
             {
