@@ -8,6 +8,7 @@ namespace Pr1_10._09
 {
     class AutoService
     {
+        
         private Random random = new Random();
         private int balance = 1000; // начальный баланс
         private Dictionary<string, int> Storage = new Dictionary<string, int>(); // склад: деталь -> количество
@@ -47,7 +48,6 @@ namespace Pr1_10._09
         public void Start()
         {
             this.InitializeParts();
-
             Console.WriteLine("=== ДОБРО ПОЖАЛОВАТЬ В АВТОСЕРВИС! ===");
             Console.WriteLine($"Начальный баланс: {balance} руб.");
             Console.WriteLine("Удачи в бизнесе!\n");
