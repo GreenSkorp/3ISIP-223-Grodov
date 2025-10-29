@@ -7,7 +7,7 @@ namespace GMWOG_Marketplace
 {
     class Program
     {
-        private static MarketplaceEntities db = new MarketplaceEntities();
+        private static MarketplaceEntities db = Core.Market;
         private static Users currentUser = null;
 
         static void Main(string[] args)

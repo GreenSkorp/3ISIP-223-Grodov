@@ -8,5 +8,7 @@ namespace Pr1_10._09
 {
     class Core
     {
+        public static MarketplaceEntities Market = new MarketplaceEntities();
+
     }
 }
