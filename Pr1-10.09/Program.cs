@@ -1,465 +1,492 @@
 ﻿using System;
 using System.Collections.Generic;
+using System.Data.Entity;
 using System.Linq;
-using Pr1_10._09;
+using System.Text;
+using System.Threading.Tasks;
 
-namespace GMWOG_Marketplace
+//1-Просмотр товара, Вход в акк, Рег акка, выход программы
+//Вход - Ввести Логин и пароль
+//Рег - Ввеси Логин, Пароль и повтор пароля
+
+//Просмотр товара - Всех заказаных впринцепе(Order)
+//После входа - Показать Ордер этого пользователя, Корзину(Внутри сделать оформления заказа(переход из Cart в Order))
+
+namespace Pr1_10._09
 {
-    class Program
+    public class MarketPlace
     {
         private static MarketplaceEntities db = Core.Market;
-        private static Users currentUser = null;
+        private Dictionary<string, int> productsprice = new Dictionary<string, int>();
+        private Users currentUser = null;
 
-        static void Main(string[] args)
+        private void InitializeProducts()
         {
-            Console.WriteLine("=== Добро пожаловать в GMWOG Маркетплейс! ===");
+            productsprice["Рюкзак"] = 300;
+            productsprice["Пенал"] = 50;
+            productsprice["Тетрадь"] = 20;
+            productsprice["Ручка"] = 60;
+            productsprice["Карандаш"] = 40;
+            productsprice["Корректор"] = 200;
+            productsprice["Ластик"] = 70;
+            productsprice["Точилка"] = 90;
+
+            // Добавляем товары в базу данных если их нет
+            if (!db.Products.Any())
+            {
+                foreach (var product in productsprice)
+                {
+                    db.Products.Add(new Products
+                    {
+                        Name = product.Key,
+                        Price = product.Value
+                    });
+                }
+                db.SaveChanges();
+            }
+        }
+
+        private void InitializePickupPoints()
+        {
+            if (!db.PointOrders.Any())
+            {
+                var points = new List<string>
+                {
+                    "ул. Ленина, д. 10",
+                    "пр. Мира, д. 25",
+                    "ул. Центральная, д. 5",
+                    "ул. Школьная, д. 15"
+                };
+
+                foreach (var address in points)
+                {
+                    db.PointOrders.Add(new PointOrders { Address = address });
+                }
+                db.SaveChanges();
+            }
+        }
+
+        public void Run()
+        {
+            InitializeProducts();
+            InitializePickupPoints();
 
             while (true)
             {
-                if (currentUser == null)
+                Console.Clear();
+                Console.WriteLine("=== МАРКЕТПЛЕЙС ===");
+                Console.WriteLine("1. Просмотр товаров");
+                Console.WriteLine("2. Регистрация");
+                Console.WriteLine("3. Вход в аккаунт");
+                Console.WriteLine("4. Выход");
+
+                if (currentUser != null)
                 {
-                    ShowMainMenu();
+                    Console.WriteLine($"\nВы вошли как: {currentUser.UserName}");
+                    Console.WriteLine("5. Личный кабинет");
                 }
-                else
+
+                Console.Write("\nВыберите действие: ");
+                var choice = Console.ReadLine();
+
+                switch (choice)
                 {
-                    ShowUserMenu();
+                    case "1":
+                        ShowProducts();
+                        break;
+                    case "2":
+                        Register();
+                        break;
+                    case "3":
+                        Login();
+                        break;
+                    case "4":
+                        return;
+                    case "5":
+                        if (currentUser != null)
+                            UserMenu();
+                        break;
+                    default:
+                        Console.WriteLine("Неверный выбор!");
+                        Console.ReadKey();
+                        break;
                 }
             }
         }
 
-        static void ShowMainMenu()
+        private void ShowProducts()
         {
-            Console.WriteLine("\n=== Главное меню ===");
-            Console.WriteLine("1. Просмотр товаров");
-            Console.WriteLine("2. Регистрация");
-            Console.WriteLine("3. Вход в аккаунт");
-            Console.WriteLine("4. Выход");
-            Console.Write("Выберите действие: ");
+            Console.Clear();
+            Console.WriteLine("=== ВСЕ ТОВАРЫ ===\n");
 
-            var choice = Console.ReadLine();
-            switch (choice)
-            {
-                case "1":
-                    ViewProducts();
-                    break;
-                case "2":
-                    Register();
-                    break;
-                case "3":
-                    Login();
-                    break;
-                case "4":
-                    Environment.Exit(0);
-                    break;
-                default:
-                    Console.WriteLine("Неверный выбор!");
-                    break;
-            }
-        }
-
-        static void ShowUserMenu()
-        {
-            Console.WriteLine($"\n=== Добро пожаловать, {currentUser.Username}! ===");
-            Console.WriteLine("1. Просмотр товаров");
-            Console.WriteLine("2. Корзина");
-            Console.WriteLine("3. Мои заказы");
-            Console.WriteLine("4. Выйти из аккаунта");
-            Console.Write("Выберите действие: ");
-
-            var choice = Console.ReadLine();
-            switch (choice)
-            {
-                case "1":
-                    ViewProducts();
-                    break;
-                case "2":
-                    ShowCart();
-                    break;
-                case "3":
-                    ViewOrders();
-                    break;
-                case "4":
-                    currentUser = null;
-                    break;
-                default:
-                    Console.WriteLine("Неверный выбор!");
-                    break;
-            }
-        }
-
-        static void ViewProducts()
-        {
-            Console.WriteLine("\n=== Все товары ===");
             var products = db.Products.ToList();
-
-            if (!products.Any())
-            {
-                Console.WriteLine("Товары отсутствуют.");
-                return;
-            }
-
             foreach (var product in products)
             {
-                Console.WriteLine($"{product.ProductId}. {product.Name} - {product.Price:C} (В наличии: {product.StockQuantity})");
-                Console.WriteLine($"   {product.Description}");
-                Console.WriteLine();
+                Console.WriteLine($"{product.ProductID}. {product.Name} - {product.Price} руб.");
             }
 
-            if (currentUser != null)
-            {
-                Console.Write("Добавить товар в корзину? (ID товара или 0 для отмены): ");
-                if (int.TryParse(Console.ReadLine(), out int productId) && productId > 0)
-                {
-                    AddToCart(productId);
-                }
-            }
+            Console.WriteLine("\nНажмите любую клавишу для возврата...");
+            Console.ReadKey();
         }
 
-        static void Register()
+        private void Register()
         {
-            Console.WriteLine("\n=== Регистрация ===");
-            Console.Write("Имя пользователя: ");
+            Console.Clear();
+            Console.WriteLine("=== РЕГИСТРАЦИЯ ===\n");
+
+            Console.Write("Введите имя пользователя: ");
             var username = Console.ReadLine();
 
-            if (db.Users.Any(u => u.Username == username))
+            if (db.Users.Any(u => u.UserName == username))
             {
                 Console.WriteLine("Пользователь с таким именем уже существует!");
+                Console.ReadKey();
                 return;
             }
 
-            Console.Write("Пароль: ");
+            Console.Write("Введите пароль: ");
             var password = Console.ReadLine();
+
             Console.Write("Подтвердите пароль: ");
             var confirmPassword = Console.ReadLine();
 
             if (password != confirmPassword)
             {
                 Console.WriteLine("Пароли не совпадают!");
+                Console.ReadKey();
                 return;
             }
 
-            Console.Write("Email: ");
-            var email = Console.ReadLine();
-
-            var newUser = new User
+            var newUser = new Users
             {
-                Username = username,
-                Password = password, // В реальном приложении нужно хэшировать
-                Email = email,
-                CreatedDate = DateTime.Now
+                UserName = username,
+                Password = password,
+                RegisterDate = DateTime.Now
             };
 
             db.Users.Add(newUser);
             db.SaveChanges();
 
-            Console.WriteLine("Регистрация успешна! Теперь вы можете войти в аккаунт.");
+            Console.WriteLine("Регистрация успешна!");
+            Console.ReadKey();
         }
 
-        static void Login()
+        private void Login()
         {
-            Console.WriteLine("\n=== Вход в аккаунт ===");
-            Console.Write("Имя пользователя: ");
+            Console.Clear();
+            Console.WriteLine("=== ВХОД В АККАУНТ ===\n");
+
+            Console.Write("Введите имя пользователя: ");
             var username = Console.ReadLine();
-            Console.Write("Пароль: ");
+
+            Console.Write("Введите пароль: ");
             var password = Console.ReadLine();
 
-            var user = db.Users.FirstOrDefault(u => u.Username == username && u.Password == password);
+            currentUser = db.Users.FirstOrDefault(u => u.UserName == username && u.Password == password);
 
-            if (user != null)
-            {
-                currentUser = user;
-                Console.WriteLine($"Успешный вход! Добро пожаловать, {user.Username}!");
-            }
-            else
+            if (currentUser == null)
             {
                 Console.WriteLine("Неверное имя пользователя или пароль!");
-            }
-        }
-
-        static void AddToCart(int productId)
-        {
-            var product = db.Products.Find(productId);
-            if (product == null)
-            {
-                Console.WriteLine("Товар не найден!");
-                return;
-            }
-
-            if (product.StockQuantity <= 0)
-            {
-                Console.WriteLine("Товар отсутствует на складе!");
-                return;
-            }
-
-            var existingCartItem = db.CartItems.FirstOrDefault(ci =>
-                ci.UserId == currentUser.UserId && ci.ProductId == productId);
-
-            if (existingCartItem != null)
-            {
-                existingCartItem.Quantity++;
+                Console.ReadKey();
             }
             else
             {
-                var newCartItem = new CartItem
-                {
-                    UserId = currentUser.UserId,
-                    ProductId = productId,
-                    Quantity = 1,
-                    AddedDate = DateTime.Now
-                };
-                db.CartItems.Add(newCartItem);
+                Console.WriteLine("Вход выполнен успешно!");
+                Console.ReadKey();
             }
-
-            db.SaveChanges();
-            Console.WriteLine("Товар добавлен в корзину!");
         }
 
-        static void ShowCart()
+        private void UserMenu()
         {
-            Console.WriteLine("\n=== Корзина ===");
-            var cartItems = db.CartItems
-                .Where(ci => ci.UserId == currentUser.UserId)
-                .Join(db.Products,
-                      ci => ci.ProductId,
-                      p => p.ProductId,
-                      (ci, p) => new { CartItem = ci, Product = p })
+            while (currentUser != null)
+            {
+                Console.Clear();
+                Console.WriteLine($"=== ЛИЧНЫЙ КАБИНЕТ ({currentUser.UserName}) ===\n");
+                Console.WriteLine("1. Просмотр моих заказов");
+                Console.WriteLine("2. Корзина");
+                Console.WriteLine("3. Добавить товар в корзину");
+                Console.WriteLine("4. Выйти из аккаунта");
+
+                Console.Write("\nВыберите действие: ");
+                var choice = Console.ReadLine();
+
+                switch (choice)
+                {
+                    case "1":
+                        ShowUserOrders();
+                        break;
+                    case "2":
+                        ShowCart();
+                        break;
+                    case "3":
+                        AddToCart();
+                        break;
+                    case "4":
+                        currentUser = null;
+                        return;
+                    default:
+                        Console.WriteLine("Неверный выбор!");
+                        Console.ReadKey();
+                        break;
+                }
+            }
+        }
+
+        private void ShowUserOrders()
+        {
+            Console.Clear();
+            Console.WriteLine("=== МОИ ЗАКАЗЫ ===\n");
+
+            var orders = db.Order
+                .Where(o => o.UserID == currentUser.UserID)
+                .OrderByDescending(o => o.OrderDate)
+                .Include(o => o.PointOrders)
+                .Include(o => o.OrderCart)
+                .ToList();
+
+            if (!orders.Any())
+            {
+                Console.WriteLine("У вас нет заказов.");
+            }
+            else
+            {
+                foreach (var order in orders)
+                {
+                    Console.WriteLine($"Заказ #{order.OrderID} от {order.OrderDate:dd.MM.yyyy HH:mm}");
+                    Console.WriteLine($"ПВЗ: {order.PointOrders.Address}");
+                    Console.WriteLine($"Общая сумма: {order.TatalAmount} руб.");
+                    Console.WriteLine("Товары:");
+
+                    var orderItems = db.OrderCart
+                        .Where(oc => oc.OrderID == order.OrderID)
+                        .Include(oc => oc.Products)
+                        .ToList();
+
+                    foreach (var item in orderItems)
+                    {
+                        Console.WriteLine($"  - {item.Products.Name} x{item.Count} = {item.TotalPrice} руб.");
+                    }
+                    Console.WriteLine();
+                }
+            }
+
+            Console.WriteLine("Нажмите любую клавишу для возврата...");
+            Console.ReadKey();
+        }
+
+        private void ShowCart()
+        {
+            Console.Clear();
+            Console.WriteLine("=== КОРЗИНА ===\n");
+
+            var cartItems = db.Cart
+                .Where(c => c.UserID == currentUser.UserID)
+                .Include(c => c.Products)
                 .ToList();
 
             if (!cartItems.Any())
             {
                 Console.WriteLine("Корзина пуста.");
-                return;
-            }
-
-            decimal total = 0;
-            foreach (var item in cartItems)
-            {
-                var itemTotal = item.Product.Price * item.CartItem.Quantity;
-                total += itemTotal;
-                Console.WriteLine($"{item.Product.Name} - {item.Product.Price:C} x {item.CartItem.Quantity} = {itemTotal:C}");
-            }
-            Console.WriteLine($"Общая сумма: {total:C}");
-
-            Console.WriteLine("\n1. Купить все товары из корзины");
-            Console.WriteLine("2. Купить отдельный товар");
-            Console.WriteLine("3. Удалить товар из корзины");
-            Console.WriteLine("0. Назад");
-            Console.Write("Выберите действие: ");
-
-            var choice = Console.ReadLine();
-            switch (choice)
-            {
-                case "1":
-                    PurchaseAllFromCart(cartItems);
-                    break;
-                case "2":
-                    PurchaseSingleItem();
-                    break;
-                case "3":
-                    RemoveFromCart();
-                    break;
-            }
-        }
-
-        static void PurchaseAllFromCart(dynamic cartItems)
-        {
-            var pickupPoint = SelectPickupPoint();
-            if (pickupPoint == null) return;
-
-            // Проверка наличия товаров
-            foreach (var item in cartItems)
-            {
-                var product = db.Products.Find(item.Product.ProductId);
-                if (product.StockQuantity < item.CartItem.Quantity)
-                {
-                    Console.WriteLine($"Недостаточно товара '{product.Name}' на складе!");
-                    return;
-                }
-            }
-
-            // Создание заказа
-            var order = new Order
-            {
-                UserId = currentUser.UserId,
-                PointId = pickupPoint.PointId,
-                OrderDate = DateTime.Now,
-                TotalAmount = 0
-            };
-            db.Orders.Add(order);
-            db.SaveChanges();
-
-            decimal totalAmount = 0;
-
-            // Добавление товаров в заказ
-            foreach (var item in cartItems)
-            {
-                var product = db.Products.Find(item.Product.ProductId);
-                var orderItem = new OrderItem
-                {
-                    OrderId = order.OrderId,
-                    ProductId = product.ProductId,
-                    Quantity = item.CartItem.Quantity,
-                    Price = product.Price
-                };
-                db.OrderItems.Add(orderItem);
-
-                // Обновление количества на складе
-                product.StockQuantity -= item.CartItem.Quantity;
-
-                totalAmount += product.Price * item.CartItem.Quantity;
-
-                // Удаление из корзины
-                db.CartItems.Remove(item.CartItem);
-            }
-
-            order.TotalAmount = totalAmount;
-            db.SaveChanges();
-
-            Console.WriteLine($"Заказ #{order.OrderId} успешно создан! Общая сумма: {totalAmount:C}");
-        }
-
-        static void PurchaseSingleItem()
-        {
-            Console.Write("Введите ID товара для покупки: ");
-            if (!int.TryParse(Console.ReadLine(), out int productId))
-            {
-                Console.WriteLine("Неверный ID!");
-                return;
-            }
-
-            var cartItem = db.CartItems.FirstOrDefault(ci =>
-                ci.UserId == currentUser.UserId && ci.ProductId == productId);
-
-            if (cartItem == null)
-            {
-                Console.WriteLine("Товар не найден в корзине!");
-                return;
-            }
-
-            var product = db.Products.Find(productId);
-            if (product.StockQuantity < cartItem.Quantity)
-            {
-                Console.WriteLine("Недостаточно товара на складе!");
-                return;
-            }
-
-            var pickupPoint = SelectPickupPoint();
-            if (pickupPoint == null) return;
-
-            // Создание заказа для одного товара
-            var order = new Order
-            {
-                UserId = currentUser.UserId,
-                PointId = pickupPoint.PointId,
-                OrderDate = DateTime.Now,
-                TotalAmount = product.Price * cartItem.Quantity
-            };
-            db.Orders.Add(order);
-            db.SaveChanges();
-
-            var orderItem = new OrderItem
-            {
-                OrderId = order.OrderId,
-                ProductId = productId,
-                Quantity = cartItem.Quantity,
-                Price = product.Price
-            };
-            db.OrderItems.Add(orderItem);
-
-            // Обновление склада и корзины
-            product.StockQuantity -= cartItem.Quantity;
-            db.CartItems.Remove(cartItem);
-            db.SaveChanges();
-
-            Console.WriteLine($"Товар '{product.Name}' успешно куплен! Заказ #{order.OrderId}");
-        }
-
-        static PickupPoint SelectPickupPoint()
-        {
-            Console.WriteLine("\n=== Выберите пункт выдачи ===");
-            var pickupPoints = db.PickupPoints.ToList();
-
-            foreach (var point in pickupPoints)
-            {
-                Console.WriteLine($"{point.PointId}. {point.Address} ({point.WorkingHours})");
-            }
-
-            Console.Write("Выберите ПВЗ (ID): ");
-            if (int.TryParse(Console.ReadLine(), out int pointId))
-            {
-                var selectedPoint = db.PickupPoints.Find(pointId);
-                if (selectedPoint != null)
-                {
-                    return selectedPoint;
-                }
-            }
-
-            Console.WriteLine("Неверный выбор ПВЗ!");
-            return null;
-        }
-
-        static void RemoveFromCart()
-        {
-            Console.Write("Введите ID товара для удаления: ");
-            if (!int.TryParse(Console.ReadLine(), out int productId))
-            {
-                Console.WriteLine("Неверный ID!");
-                return;
-            }
-
-            var cartItem = db.CartItems.FirstOrDefault(ci =>
-                ci.UserId == currentUser.UserId && ci.ProductId == productId);
-
-            if (cartItem != null)
-            {
-                db.CartItems.Remove(cartItem);
-                db.SaveChanges();
-                Console.WriteLine("Товар удален из корзины!");
             }
             else
             {
-                Console.WriteLine("Товар не найден в корзине!");
+                decimal totalAmount = 0;
+                foreach (var item in cartItems)
+                {
+                    Console.WriteLine($"{item.Products.Name} x{item.Count} = {item.TotalPrice} руб.");
+                    totalAmount += item.TotalPrice;
+                }
+                Console.WriteLine($"\nОбщая сумма: {totalAmount} руб.");
+
+                Console.WriteLine("\n1. Оформить все товары");
+                Console.WriteLine("2. Удалить товар из корзины");
+                Console.WriteLine("3. Назад");
+
+                var choice = Console.ReadLine();
+
+                switch (choice)
+                {
+                    case "1":
+                        CheckoutAll(cartItems);
+                        break;
+                    case "2":
+                        RemoveFromCart();
+                        break;
+                }
+            }
+
+            if (!cartItems.Any())
+            {
+                Console.WriteLine("Нажмите любую клавишу для возврата...");
+                Console.ReadKey();
             }
         }
 
-        static void ViewOrders()
+        private void AddToCart()
         {
-            Console.WriteLine("\n=== Мои заказы ===");
-            var orders = db.Orders
-                .Where(o => o.UserId == currentUser.UserId)
-                .OrderByDescending(o => o.OrderDate)
-                .Join(db.PickupPoints,
-                      o => o.PointId,
-                      pp => pp.PointId,
-                      (o, pp) => new { Order = o, PickupPoint = pp })
-                .ToList();
+            Console.Clear();
+            Console.WriteLine("=== ДОБАВЛЕНИЕ ТОВАРА В КОРЗИНУ ===\n");
 
-            if (!orders.Any())
+            var products = db.Products.ToList();
+            foreach (var product in products)
             {
-                Console.WriteLine("У вас пока нет заказов.");
-                return;
+                Console.WriteLine($"{product.ProductID}. {product.Name} - {product.Price} руб.");
             }
 
-            foreach (var orderInfo in orders)
+            Console.Write("\nВведите ID товара: ");
+            if (int.TryParse(Console.ReadLine(), out int productId))
             {
-                Console.WriteLine($"Заказ #{orderInfo.Order.OrderId} от {orderInfo.Order.OrderDate:dd.MM.yyyy HH:mm}");
-                Console.WriteLine($"Сумма: {orderInfo.Order.TotalAmount:C}");
-                Console.WriteLine($"ПВЗ: {orderInfo.PickupPoint.Address}");
-
-                var orderItems = db.OrderItems
-                    .Where(oi => oi.OrderId == orderInfo.Order.OrderId)
-                    .Join(db.Products,
-                          oi => oi.ProductId,
-                          p => p.ProductId,
-                          (oi, p) => new { OrderItem = oi, Product = p })
-                    .ToList();
-
-                foreach (var item in orderItems)
+                Console.Write("Введите количество: ");
+                if (int.TryParse(Console.ReadLine(), out int count) && count > 0)
                 {
-                    Console.WriteLine($"  - {item.Product.Name} x {item.OrderItem.Quantity} = {item.OrderItem.Price * item.OrderItem.Quantity:C}");
+                    var product = db.Products.Find(productId);
+                    if (product != null)
+                    {
+                        var existingCartItem = db.Cart
+                            .FirstOrDefault(c => c.UserID == currentUser.UserID && c.ProductID == productId);
+
+                        if (existingCartItem != null)
+                        {
+                            existingCartItem.Count += count;
+                            existingCartItem.TotalPrice = existingCartItem.Count * product.Price;
+                        }
+                        else
+                        {
+                            var cartItem = new Cart
+                            {
+                                UserID = currentUser.UserID,
+                                ProductID = productId,
+                                Count = count,
+                                TotalPrice = count * product.Price
+                            };
+                            db.Cart.Add(cartItem);
+                        }
+
+                        db.SaveChanges();
+                        Console.WriteLine("Товар добавлен в корзину!");
+                    }
+                    else
+                    {
+                        Console.WriteLine("Товар не найден!");
+                    }
                 }
-                Console.WriteLine();
+                else
+                {
+                    Console.WriteLine("Неверное количество!");
+                }
             }
+            else
+            {
+                Console.WriteLine("Неверный ID товара!");
+            }
+
+            Console.WriteLine("Нажмите любую клавишу для возврата...");
+            Console.ReadKey();
+        }
+
+        private void RemoveFromCart()
+        {
+            Console.Write("Введите ID товара для удаления: ");
+            if (int.TryParse(Console.ReadLine(), out int productId))
+            {
+                var cartItem = db.Cart
+                    .FirstOrDefault(c => c.UserID == currentUser.UserID && c.ProductID == productId);
+
+                if (cartItem != null)
+                {
+                    db.Cart.Remove(cartItem);
+                    db.SaveChanges();
+                    Console.WriteLine("Товар удален из корзины!");
+                }
+                else
+                {
+                    Console.WriteLine("Товар не найден в корзине!");
+                }
+            }
+            else
+            {
+                Console.WriteLine("Неверный ID товара!");
+            }
+            Console.ReadKey();
+        }
+
+        private void CheckoutAll(List<Cart> cartItems)
+        {
+            Console.Clear();
+            Console.WriteLine("=== ОФОРМЛЕНИЕ ЗАКАЗА ===\n");
+
+            var pickupPoints = db.PointOrders.ToList();
+            Console.WriteLine("Доступные пункты выдачи:");
+            foreach (var point in pickupPoints)
+            {
+                Console.WriteLine($"{point.PointID}. {point.Address}");
+            }
+
+            Console.Write("\nВыберите пункт выдачи: ");
+            if (int.TryParse(Console.ReadLine(), out int pointId))
+            {
+                var selectedPoint = db.PointOrders.Find(pointId);
+                if (selectedPoint != null)
+                {
+                    int totalAmount = cartItems.Sum(c => c.TotalPrice);
+
+                    var order = new Order
+                    {
+                        UserID = currentUser.UserID,
+                        PointID = pointId,
+                        OrderDate = DateTime.Now,
+                        TatalAmount = totalAmount
+                    };
+
+                    db.Order.Add(order);
+                    db.SaveChanges();
+
+                    // Переносим товары из корзины в заказ
+                    foreach (var cartItem in cartItems)
+                    {
+                        var orderCart = new OrderCart
+                        {
+                            OrderID = order.OrderID,
+                            ProdictID = cartItem.ProductID,
+                            Count = cartItem.Count,
+                            TotalPrice = cartItem.TotalPrice
+                        };
+                        db.OrderCart.Add(orderCart);
+
+                        // Удаляем из корзины
+                        db.Cart.Remove(cartItem);
+                    }
+
+                    db.SaveChanges();
+
+                    Console.WriteLine($"Заказ успешно оформлен! Номер заказа: {order.OrderID}");
+                }
+                else
+                {
+                    Console.WriteLine("Пункт выдачи не найден!");
+                }
+            }
+            else
+            {
+                Console.WriteLine("Неверный выбор пункта выдачи!");
+            }
+
+            Console.WriteLine("Нажмите любую клавишу для возврата...");
+            Console.ReadKey();
+        }
+    }
+
+    public class Core
+    {
+        public static MarketplaceEntities Market = new MarketplaceEntities();
+    }
+
+    class Program
+    {
+        static void Main(string[] args)
+        {
+            var marketplace = new MarketPlace();
+            marketplace.Run();
         }
     }
 }

@@ -16,7 +16,7 @@ namespace Pr1_10._09
     {
         public int CartID { get; set; }
         public int UserID { get; set; }
-        public int ProdictID { get; set; }
+        public int ProductID { get; set; }
         public int Count { get; set; }
         public int TotalPrice { get; set; }
     

@@ -185,7 +185,7 @@
           </Key>
           <Property Name="CartID" Type="Int32" Nullable="false" annotation:StoreGeneratedPattern="Identity" />
           <Property Name="UserID" Type="Int32" Nullable="false" />
-          <Property Name="ProdictID" Type="Int32" Nullable="false" />
+          <Property Name="ProductID" Type="Int32" Nullable="false" />
           <Property Name="Count" Type="Int32" Nullable="false" />
           <Property Name="TotalPrice" Type="Int32" Nullable="false" />
           <NavigationProperty Name="Products" Relationship="Self.FK_Cart_Products" FromRole="Cart" ToRole="Products" />
@@ -263,7 +263,7 @@
               <PropertyRef Name="ProductID" />
             </Principal>
             <Dependent Role="Cart">
-              <PropertyRef Name="ProdictID" />
+              <PropertyRef Name="ProductID" />
             </Dependent>
           </ReferentialConstraint>
         </Association>
@@ -371,7 +371,7 @@
               <MappingFragment StoreEntitySet="Cart">
                 <ScalarProperty Name="CartID" ColumnName="CartID" />
                 <ScalarProperty Name="UserID" ColumnName="UserID" />
-                <ScalarProperty Name="ProdictID" ColumnName="ProdictID" />
+                <ScalarProperty Name="ProductID" ColumnName="ProdictID" />
                 <ScalarProperty Name="Count" ColumnName="Count" />
                 <ScalarProperty Name="TotalPrice" ColumnName="TotalPrice" />
               </MappingFragment>
