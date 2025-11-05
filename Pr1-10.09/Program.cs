@@ -205,7 +205,8 @@ namespace Pr1_10._09
                 Console.WriteLine("1. Просмотр моих заказов");
                 Console.WriteLine("2. Корзина");
                 Console.WriteLine("3. Добавить товар в корзину");
-                Console.WriteLine("4. Выйти из аккаунта");
+
+                Console.WriteLine("5. Выйти из аккаунта");
 
                 Console.Write("\nВыберите действие: ");
                 var choice = Console.ReadLine();
@@ -222,6 +223,9 @@ namespace Pr1_10._09
                         AddToCart();
                         break;
                     case "4":
+                        AddToCart();
+                        break;
+                    case "5":
                         currentUser = null;
                         return;
                     default:
@@ -300,7 +304,8 @@ namespace Pr1_10._09
 
                 Console.WriteLine("\n1. Оформить все товары");
                 Console.WriteLine("2. Удалить товар из корзины");
-                Console.WriteLine("3. Назад");
+                Console.WriteLine("3. Купить один товар из корзины");
+                Console.WriteLine("4. Назад");
 
                 var choice = Console.ReadLine();
 
@@ -312,13 +317,17 @@ namespace Pr1_10._09
                     case "2":
                         RemoveFromCart();
                         break;
+                    case "3":
+                        BuyOneFromCart(cartItems);
+                        break;
+                    case "4":
+                        // Просто возвращаемся назад
+                        break;
+                    default:
+                        Console.WriteLine("Неверный выбор!");
+                        Console.ReadKey();
+                        break;
                 }
-            }
-
-            if (!cartItems.Any())
-            {
-                Console.WriteLine("Нажмите любую клавишу для возврата...");
-                Console.ReadKey();
             }
         }
 
@@ -407,6 +416,101 @@ namespace Pr1_10._09
             {
                 Console.WriteLine("Неверный ID товара!");
             }
+            Console.ReadKey();
+        }
+
+        private void BuyOneFromCart(List<Cart> cartItems)
+        {
+            Console.Clear();
+            Console.WriteLine("=== ПОКУПКА ОДНОГО ТОВАРА ИЗ КОРЗИНЫ ===\n");
+
+            if (!cartItems.Any())
+            {
+                Console.WriteLine("Корзина пуста!");
+                Console.WriteLine("Нажмите любую клавишу для возврата...");
+                Console.ReadKey();
+                return;
+            }
+
+            // Показываем товары в корзине
+            Console.WriteLine("Товары в вашей корзине:");
+            foreach (var item in cartItems)
+            {
+                Console.WriteLine($"{item.ProductID}. {item.Products.Name} x{item.Count} - {item.TotalPrice} руб.");
+            }
+
+            Console.Write("\nВведите ID товара для покупки: ");
+            if (int.TryParse(Console.ReadLine(), out int productId))
+            {
+                var cartItem = db.Cart
+                    .FirstOrDefault(c => c.UserID == currentUser.UserID && c.ProductID == productId);
+
+                if (cartItem != null)
+                {
+                    // Показываем доступные пункты выдачи
+                    var pickupPoints = db.PointOrders.ToList();
+                    Console.WriteLine("\nДоступные пункты выдачи:");
+                    foreach (var point in pickupPoints)
+                    {
+                        Console.WriteLine($"{point.PointID}. {point.Address}");
+                    }
+
+                    Console.Write("\nВыберите пункт выдачи: ");
+                    if (int.TryParse(Console.ReadLine(), out int pointId))
+                    {
+                        var selectedPoint = db.PointOrders.Find(pointId);
+                        if (selectedPoint != null)
+                        {
+                            // Создаем заказ для одного товара
+                            var order = new Order
+                            {
+                                UserID = currentUser.UserID,
+                                PointID = pointId,
+                                OrderDate = DateTime.Now,
+                                TatalAmount = cartItem.TotalPrice
+                            };
+
+                            db.Order.Add(order);
+                            db.SaveChanges();
+
+                            // Добавляем товар в заказ
+                            var orderCart = new OrderCart
+                            {
+                                OrderID = order.OrderID,
+                                ProdictID = cartItem.ProductID,
+                                Count = cartItem.Count,
+                                TotalPrice = cartItem.TotalPrice
+                            };
+                            db.OrderCart.Add(orderCart);
+
+                            // Удаляем товар из корзины
+                            db.Cart.Remove(cartItem);
+                            db.SaveChanges();
+
+                            Console.WriteLine($"\nТовар успешно куплен! Номер заказа: {order.OrderID}");
+                            Console.WriteLine($"Пункт выдачи: {selectedPoint.Address}");
+                        }
+                        else
+                        {
+                            Console.WriteLine("Пункт выдачи не найден!");
+                        }
+                    }
+                    else
+                    {
+                        Console.WriteLine("Неверный выбор пункта выдачи!");
+                    }
+                }
+                else
+                {
+                    Console.WriteLine("Товар не найден в корзине!");
+                }
+            }
+            else
+            {
+                Console.WriteLine("Неверный ID товара!");
+            }
+
+            Console.WriteLine("\nНажмите любую клавишу для возврата...");
             Console.ReadKey();
         }
 
